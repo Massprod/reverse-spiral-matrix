@@ -1,4 +1,4 @@
-from reverseSpiralReadSQMatrix import get_matrix
+from rSpiralRead import get_matrix
 import createTestSQMatrix as m
 import asyncio
 
