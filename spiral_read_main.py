@@ -1,10 +1,10 @@
-import asyncio
 from aiohttp import ClientSession, ClientTimeout, ClientConnectorError
 from aiohttp.client_exceptions import InvalidURL
 
-def spiral_read(matrix: list[list[int]]) -> list[int]:
+
+async def spiral_read(matrix: list[list[int]]) -> list[int]:
     """
-    Spiral read of the matrix in counter-clockwise order.
+    Reads the matrix in counter-clockwise spiral order.
     Starting from NW corner == matrix[0][0]
 
     :param matrix: of any size.
@@ -65,11 +65,35 @@ def spiral_read(matrix: list[list[int]]) -> list[int]:
 
 
 async def get_matrix(url: str) -> list[int] | str:
+    """
+    Makes GET request for input_URL.
+    Takes all possible digits from response payload, separated by non-digits.
+    Creates matrix from these values and if it's Square matrix reads in counter-clockwise spiral order.
+    Otherwise, returns Error string.
+
+    :param url: any URL string to work with.
+    :return: correct counter-clockwise reading of given Matrix.
+    """
     # Default 5m, but it's too much in our case.
-    async with ClientSession(timeout=ClientTimeout(total=60)) as connect:
+    async with ClientSession(timeout=ClientTimeout(total=45)) as connect:
         try:
             async with connect.get(url) as response:
+                # No reasons to handle all, and we can't do anything about server Errors anyway.
+                # > 400, close connection inform.
+                if not response.ok:
+                    await connect.close()
+                    if response.status == 400:
+                        return f"Bad request {response.status}:\n{url}"
+                    elif response.status == 401:
+                        return f"Don't try to access services with authorization {response.status}:\n{url}"
+                    elif response.status == 403:
+                        return f'Forbidden access: {response.status}:\n{url}'
+                    elif response.status == 404:
+                        return f"Page doesn't exist {response.status}:\n{url}"
+                    # Prefer to leave whole response, for everything uncovered.
+                    return f'Something went wrong:\n{response}'
                 orig_matrix: str = await response.text()
+                await connect.close()
                 all_values: list[int] = []
                 cur_value: str = ''
                 for sym in orig_matrix:
@@ -81,23 +105,25 @@ async def get_matrix(url: str) -> list[int] | str:
                 # Empty page. Or no digits at all.
                 if not all_values:
                     return f"No data to process from provided URL.\n{url}"
-                row_length: int = int(len(all_values) ** 0.5)
+                # Case: len == 35, sqr(35) -> 5.9 int(5.9) => 5.
+                # 35 % 5 == 0. So we need to check with float first.
+                row_length: int | float = len(all_values) ** 0.5
                 # Not square.
                 if len(all_values) % row_length != 0:
                     return f"Provided matrix from {url} have incorrect type.\n" \
                             "Only square matrix's allowed.\n"
+                # It's faster to cast float -> int then calc (** 0.5) again.
+                row_length = int(row_length)
                 correct_matrix: list[list[int]] = []
                 for y in range(0, len(all_values), row_length):
                     correct_matrix.append([])
                     for x in range(y, y + row_length):
                         correct_matrix[-1].append(all_values[x])
-                return spiral_read(correct_matrix)
+                return await spiral_read(correct_matrix)
+
         except ClientConnectorError as error:
             return f'Connection error:\n{error}'
         except InvalidURL as error:
             return f'Incorrect URL:\n{error}'
-
-
-test_url: str = 'https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt'
-# asyncio.run(get_matrix(test_url))
-print(asyncio.run(get_matrix('https://www.google.om')))
+        except TimeoutError:
+            return f'Timeout, service is unreachable:\n{url}'
