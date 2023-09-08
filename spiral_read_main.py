@@ -37,11 +37,11 @@ async def spiral_read(matrix: list[list[int]]) -> list[int]:
     min_y: int = 0
     spiral = [matrix[y][x]]
     while steps < all_steps:
-        if turn % 3 == 0 and turn == 3:
+        if turn == 3:
             min_x += 1
             max_x -= 1
             turn += 1
-        elif turn % 5 == 0 and turn == 5:
+        elif turn == 5:
             min_y += 1
             max_y -= 1
             turn = 0
