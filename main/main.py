@@ -79,7 +79,7 @@ async def get_matrix(url: str) -> list[int] | str:
         try:
             async with connect.get(url) as response:
                 # No reasons to handle all, and we can't do anything about server Errors anyway.
-                # > 400, close connection inform.
+                # > 400, close connection + inform.
                 if not response.ok:
                     await connect.close()
                     if response.status == 400:
@@ -121,9 +121,9 @@ async def get_matrix(url: str) -> list[int] | str:
                         correct_matrix[-1].append(all_values[x])
                 return await spiral_read(correct_matrix)
 
-        except ClientConnectorError as error:
-            return f'Connection error:\n{error}'
-        except InvalidURL as error:
-            return f'Incorrect URL:\n{error}'
         except TimeoutError:
             return f'Timeout, service is unreachable:\n{url}'
+        except ClientConnectorError as error:
+            return f'Connection error:\n{error}\nError type:{type(error)}'
+        except InvalidURL as error:
+            return f'Incorrect URL:\n{error}\nError type:{type(error)}'

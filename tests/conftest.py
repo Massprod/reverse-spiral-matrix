@@ -32,11 +32,12 @@ def create_square_matrix_string(size: int) -> tuple[str, list[int]]:
 
     :return: Tuple with string to filter and correct Numbers which was used to build it
     """
-    nums: int = size
     used_nums: list[int] = []
     symbols: str = ascii_letters + '!@#$^*()_+-/|}{|:";'
+    if not size:
+        return symbols, used_nums
     square_string: str = ''
-    for _ in range(nums):
+    for _ in range(size):
         cur_num: int = randint(-10 ** 16, 10 ** 16)
         used_nums.append(cur_num)
         slice_ind: int = randint(1, len(symbols) - 1)

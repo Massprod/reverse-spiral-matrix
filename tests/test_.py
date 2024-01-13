@@ -1,7 +1,6 @@
 from pytest import raises, mark
-from conftest import create_square_matrix_string
-from spiral_read_main import spiral_read, get_matrix
-from validation_for_spiral_read import reverse_spiral_populate, reverse_spiral_read
+from main.main import spiral_read
+from main.validation import reverse_spiral_populate, reverse_spiral_read
 
 
 @mark.asyncio
