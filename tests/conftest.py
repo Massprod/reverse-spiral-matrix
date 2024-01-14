@@ -23,18 +23,34 @@ def one_col(size, val) -> list[list[int]]:
     yield [[randint(-val, val)] for _ in range(size)]
 
 
+@fixture
+def correct_url() -> str:
+    yield 'https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt'
+
+
+@fixture
+def mock_url() -> str:
+    yield 'https://testUrl/'
+
+
+@fixture
+def broken_url() -> str:
+    yield 'http:/|broken../'
+
+
 def create_square_matrix_string(size: int) -> tuple[str, list[int]]:
     """
     Create matrix string with extra symbols to filter.
+    If size <= 0: creates non-digit string (empty matrix).
     Like in given string from:
     https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt
-    We need to test filtering of non-digits out and use only square-matrix's.
 
-    :return: Tuple with string to filter and correct Numbers which was used to build square-matrix.
+    :param size: of desired square-matrix.
+    :return: string to filter and list of numbers which was used to build square-matrix string.
     """
     used_nums: list[int] = []
     symbols: str = ascii_letters + '!@#$^*()_+-/|}{|:";'
-    if not size:
+    if 0 >= size:
         return symbols, used_nums
     square_string: str = ''
     for num in range(size):
