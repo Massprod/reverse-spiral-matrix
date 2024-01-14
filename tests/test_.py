@@ -104,7 +104,53 @@ async def test_non_digit_page(mock_url) -> None:
     Testing correct function call with correct get() return,
      but `request.body` contains only non-digit symbols.
     """
+    test_matrix_string: str
+    used_number: list[int]
+    test_size: int = -20
+    test_matrix_string, used_numbers = create_square_matrix_string(test_size)
     with aioresponses() as mocked:
-        mocked.get(mock_url, body=create_square_matrix_string(-20)[0])
+        mocked.get(mock_url, body=test_matrix_string)
         res: list[int] = await get_matrix(mock_url)
         assert not res
+
+
+@mark.asyncio
+async def test_not_square_size_matrix(mock_url) -> None:
+    """
+    Testing correct function call with correct get() return,
+     but `request.body` holds not square-matrix.
+    """
+    test_matrix_string: str
+    used_number: list[int]
+    test_size: int = 77
+    test_matrix_string, used_numbers = create_square_matrix_string(test_size)
+    with aioresponses() as mocked:
+        mocked.get(mock_url, body=test_matrix_string)
+        with raises(ContentTypeError):
+            await get_matrix(mock_url)
+
+
+@mark.asyncio
+async def test_last_symbol_being_digit(mock_url) -> None:
+    """
+    Testing case with last symbol of square-matrix string being digit.
+    """
+    test_matrix_string: str
+    used_number: list[int]
+    test_size: int = 64
+    test_matrix_string, used_numbers = create_square_matrix_string(test_size)
+    test_matrix_string = test_matrix_string[:-1]  # we only add 1 symbol after each number.
+    with aioresponses() as mocked:
+        mocked.get(mock_url, body=test_matrix_string)
+        res: list[int] = await get_matrix(mock_url)
+        assert sorted(res) == sorted(used_numbers)
+
+
+@mark.asyncio
+async def test_correct_url_with_known_answer(correct_url, correct_answer) -> None:
+    """
+    Testing correct function call to:
+     `https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt`
+    With known answer: https://github.com/avito-tech/python-trainee-assignment.
+    """
+    assert correct_answer == await get_matrix(correct_url)
