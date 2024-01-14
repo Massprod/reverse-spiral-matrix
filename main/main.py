@@ -1,6 +1,6 @@
 from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import (
-    InvalidURL, ClientConnectionError, ServerTimeoutError, ClientResponseError, ContentTypeError
+    InvalidURL, ClientConnectionError, ClientResponseError, ContentTypeError
 )
 
 
@@ -76,7 +76,7 @@ async def get_matrix(url: str) -> list[int]:
     :return: correct counter-clockwise reading of given square-matrix.
     """
     # Default 5m, but it's too much in our case.
-    timelimit: int = 35
+    timelimit: int = 45
     async with ClientSession(timeout=ClientTimeout(total=timelimit)) as connect:
         try:
             async with connect.get(url) as response:
@@ -124,7 +124,7 @@ async def get_matrix(url: str) -> list[int]:
                 return await spiral_read(correct_matrix)
 
         except TimeoutError as error:
-            raise ServerTimeoutError(
+            raise TimeoutError(
                 f'\nTimeout, service is unreachable.'
                 f'\nError type: {type(error)}`'
                 f'\nTimelimit: {timelimit}sec'
