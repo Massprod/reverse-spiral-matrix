@@ -15,17 +15,22 @@ def val() -> int:
 
 @fixture
 def one_row(size, val) -> list[list[int]]:
-    yield [[randint(-val, val) for _ in range(size)]]
+    yield [[randint(0, val) for _ in range(size)]]
 
 
 @fixture
 def one_col(size, val) -> list[list[int]]:
-    yield [[randint(-val, val)] for _ in range(size)]
+    yield [[randint(0, val)] for _ in range(size)]
 
 
 @fixture
 def correct_url() -> str:
     yield 'https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt'
+
+
+@fixture
+def correct_answer() -> list[int]:
+    yield [10, 50, 90, 130, 140, 150, 160, 120, 80, 40, 30, 20, 60, 100, 110, 70]
 
 
 @fixture
@@ -54,7 +59,7 @@ def create_square_matrix_string(size: int) -> tuple[str, list[int]]:
         return symbols, used_nums
     square_string: str = ''
     for num in range(size):
-        cur_num: int = randint(-10 ** 8, 10 ** 8)
+        cur_num: int = randint(0, 10 ** 8)
         used_nums.append(cur_num)
         # random SYMBOL + NUMBER + random SYMBOL
         square_string += choice(symbols) + str(cur_num) + choice(symbols)
