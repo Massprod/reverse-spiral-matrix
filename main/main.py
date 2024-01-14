@@ -1,11 +1,13 @@
-from aiohttp import ClientSession, ClientTimeout, ClientConnectorError
-from aiohttp.client_exceptions import InvalidURL
+from aiohttp import ClientSession, ClientTimeout
+from aiohttp.client_exceptions import (
+    InvalidURL, ClientConnectionError, ServerTimeoutError, ClientResponseError, ContentTypeError
+)
 
 
-async def spiral_read(matrix: list[list[int]]) -> list[int]:
+async def spiral_read(matrix: list[list[int | str]]) -> list[int | str]:
     """
     Reads the matrix in counter-clockwise spiral order.
-    Starting from NW corner == matrix[0][0]
+    Starting from NW corner == matrix[0][0].
 
     :param matrix: of any size.
     :return: all matrix values in counter-clockwise spiral order.
@@ -13,7 +15,7 @@ async def spiral_read(matrix: list[list[int]]) -> list[int]:
     if len(matrix) == 0:
         return []
     max_x: int = len(matrix[0]) - 1
-    spiral: list[int] = []
+    spiral: list[int | str] = []
     # Only one column.
     if max_x == 0:
         for _ in matrix:
@@ -64,36 +66,29 @@ async def spiral_read(matrix: list[list[int]]) -> list[int]:
     return spiral
 
 
-async def get_matrix(url: str) -> list[int] | str:
+async def get_matrix(url: str) -> list[int]:
     """
-    Makes GET request for input_URL.
-    Takes all possible digits from response payload, separated by non-digits.
-    Creates matrix from these values and if it's Square matrix reads in counter-clockwise spiral order.
-    Otherwise, returns Error string.
+    Makes GET request for input URL.
+    Takes all possible digits from response payload, separated by non-digit symbols.
+    Creates matrix from these values and if it's a Square matrix reads it in counter-clockwise spiral order.
 
     :param url: any URL string to work with.
-    :return: correct counter-clockwise reading of given Matrix.
+    :return: correct counter-clockwise reading of given square-matrix.
     """
     # Default 5m, but it's too much in our case.
-    async with ClientSession(timeout=ClientTimeout(total=45)) as connect:
+    timelimit: int = 35
+    async with ClientSession(timeout=ClientTimeout(total=timelimit)) as connect:
         try:
             async with connect.get(url) as response:
-                # No reasons to handle all, and we can't do anything about server Errors anyway.
-                # > 400, close connection + inform.
                 if not response.ok:
-                    await connect.close()
-                    if response.status == 400:
-                        return f"Bad request {response.status}:\n{url}"
-                    elif response.status == 401:
-                        return f"Don't try to access services with authorization {response.status}:\n{url}"
-                    elif response.status == 403:
-                        return f'Forbidden access: {response.status}:\n{url}'
-                    elif response.status == 404:
-                        return f"Page doesn't exist {response.status}:\n{url}"
-                    # Prefer to leave whole response, for everything uncovered.
-                    return f'Something went wrong:\n{response}'
+                    # If `response.ok` is False, then it's already >=400.
+                    raise ClientResponseError(
+                        headers=response.headers,
+                        request_info=response.request_info,
+                        status=response.status,
+                        history=response.history,
+                    )
                 orig_matrix: str = await response.text()
-                await connect.close()
                 all_values: list[int] = []
                 cur_value: str = ''
                 for sym in orig_matrix:
@@ -102,28 +97,57 @@ async def get_matrix(url: str) -> list[int] | str:
                     elif cur_value:
                         all_values.append(int(cur_value))
                         cur_value = ''
-                # Empty page. Or no digits at all.
+                # If last symbol is digit, it will be added in `cur_value`,
+                #  but never added into `all_values`. Extra check.
+                if cur_value:
+                    all_values.append(int(cur_value))
+                # No digits at this page, at all.
                 if not all_values:
-                    return f"No data to process from provided URL.\n{url}"
-                # Case: len == 35, sqr(35) -> 5.9 int(5.9) => 5.
-                # 35 % 5 == 0. So we need to check with float first.
-                row_length: int | float = len(all_values) ** 0.5
-                # Not square.
-                if len(all_values) % row_length != 0:
-                    return f"Provided matrix from {url} have incorrect type.\n" \
-                            "Only square matrix's allowed.\n"
-                # It's faster to cast float -> int then calc (** 0.5) again.
-                row_length = int(row_length)
-                correct_matrix: list[list[int]] = []
-                for y in range(0, len(all_values), row_length):
-                    correct_matrix.append([])
-                    for x in range(y, y + row_length):
-                        correct_matrix[-1].append(all_values[x])
+                    return all_values
+                row_length = col_length = int(len(all_values) ** 0.5)
+                # Not a square matrix.
+                if len(all_values) != (row_length * col_length):
+                    raise ContentTypeError(
+                        request_info=response.request_info,
+                        status=204,
+                        message=f"Numbers from provided url generates non-square matrix."
+                                f" Only square matrix's allowed.",
+                        history=response.history,
+                    )
+                # We're always reading matrix from URL left-top -> right-bot.
+                # So, we already have `all_values` in correct order.
+                # We just need to take them by row size == `row_length`.
+                # index = 0 -> row_length => row_length -> row_length + row_length etc.
+                correct_matrix: list[list[int]] = [
+                    all_values[x * row_length: row_length + (row_length * x)] for x in range(row_length)
+                ]
                 return await spiral_read(correct_matrix)
 
-        except TimeoutError:
-            return f'Timeout, service is unreachable:\n{url}'
-        except ClientConnectorError as error:
-            return f'Connection error:\n{error}\nError type:{type(error)}'
-        except InvalidURL as error:
-            return f'Incorrect URL:\n{error}\nError type:{type(error)}'
+        except TimeoutError as error:
+            raise ServerTimeoutError(
+                f'\nTimeout, service is unreachable.'
+                f'\nError type: {type(error)}`'
+                f'\nTimelimit: {timelimit}sec'
+                f'\nProvided url: {url}'
+            )
+        except ClientConnectionError as error:
+            raise ClientConnectionError(
+                f'\nConnection error: `{error}`'
+                f'\nError type: {type(error)}'
+                f'\nProvided url: {url}',
+            )
+        except InvalidURL:
+            raise InvalidURL(
+                url=url,
+            )
+
+
+from asyncio import run
+
+# print(run(get_matrix('http://10.255.255.1')))
+# res = run(get_matrix('https://httpstat.us/404'))
+# res = run(get_matrix('https://httpstat.us/501'))
+try:
+    res = run(get_matrix('https://httpstat.us/501'))
+except ClientResponseError as e:
+    print(e, '\n', e.headers, '\n', e.request_info)
