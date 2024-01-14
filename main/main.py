@@ -140,14 +140,3 @@ async def get_matrix(url: str) -> list[int]:
             raise InvalidURL(
                 url=url,
             )
-
-
-from asyncio import run
-
-# print(run(get_matrix('http://10.255.255.1')))
-# res = run(get_matrix('https://httpstat.us/404'))
-# res = run(get_matrix('https://httpstat.us/501'))
-try:
-    res = run(get_matrix('https://httpstat.us/501'))
-except ClientResponseError as e:
-    print(e, '\n', e.headers, '\n', e.request_info)
