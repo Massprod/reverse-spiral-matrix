@@ -1,5 +1,5 @@
 from pytest import fixture
-from random import randint
+from random import randint, choice
 from string import ascii_letters
 
 
@@ -30,16 +30,16 @@ def create_square_matrix_string(size: int) -> tuple[str, list[int]]:
     https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt
     We need to test filtering of non-digits out and use only square-matrix's.
 
-    :return: Tuple with string to filter and correct Numbers which was used to build it
+    :return: Tuple with string to filter and correct Numbers which was used to build square-matrix.
     """
     used_nums: list[int] = []
     symbols: str = ascii_letters + '!@#$^*()_+-/|}{|:";'
     if not size:
         return symbols, used_nums
     square_string: str = ''
-    for _ in range(size):
-        cur_num: int = randint(-10 ** 16, 10 ** 16)
+    for num in range(size):
+        cur_num: int = randint(-10 ** 8, 10 ** 8)
         used_nums.append(cur_num)
-        slice_ind: int = randint(1, len(symbols) - 1)
-        square_string += symbols[:slice_ind] + str(cur_num) + symbols[slice_ind:]
+        # random SYMBOL + NUMBER + random SYMBOL
+        square_string += choice(symbols) + str(cur_num) + choice(symbols)
     return square_string, used_nums
