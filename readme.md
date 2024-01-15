@@ -1,7 +1,15 @@
-# ReverseSpiral- reverse spiral reading of sqMatrix
-Taking Url with response of a square matrix and read it in reverse spiral mode.
-Based and created for this particular [Task](https://github.com/avito-tech/python-trainee-assignment) and [Url]('https://raw.githubusercontent.com/avito-tech/python-trainee-assignment/main/matrix.txt').
+# Completed [Trainee assignment](https://github.com/avito-tech/python-trainee-assignment) ![coverage](coverage.svg)
+Задачи:
+- [x] Библиотека содержит функцию со следующим интерфейсом:
+  ```
+  async def get_matrix(url: str) -> List[int]:
+        ...
+  ```
+- [x] Функция единственным аргументом получает URL для загрузки матрицы с сервера по протоколу HTTP(S).
+- [x] Функция возвращает список, содержащий результат обхода полученной матрицы по спирали: против часовой стрелки, начиная с левого верхнего угла.
+- [x] Взаимодействие с сервером должно быть реализовано асинхронно - посредством aiohttp, httpx или другого компонента на asyncio.
+- [x] Библиотека должна корректно обрабатывать ошибки сервера и сетевые ошибки (5xx, Connection Timeout, Connection Refused, ...).
+- [x] В дальнейшем размерность матрицы может быть изменена с сохранением форматирования. Библиотека должна сохранить свою работоспособность на квадратных матрицах другой размерности.
+- [x] Решение задачи необходимо разместить на одном из публичных git-хостингов (GitHub, GitLab, Bitbucket). Можно также выслать решение в виде архива (zip, tar). Загружать библиотеку в PyPi или другие репозитории не требуется.
 
-# TODO/REDO
-Remake spiral reading [Function](https://github.com/Massprod/Test1/blob/master/test/createTestSQMatrix.py) to be more universal.
-Unit testing will be good, but it's not in a task.
+Для тестов ``pytest`` из рут директории.
